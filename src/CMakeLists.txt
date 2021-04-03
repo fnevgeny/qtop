@@ -1,6 +1,8 @@
-add_executable(qtop qtop.c)
-
 set(CMAKE_C_FLAGS "-Wall -Wextra -g -O2")
+
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+add_executable(qtop qtop.c)
 
 find_path(PBS_INCLUDE_DIR pbs_ifl.h HINTS "/opt/pbs/include")
 
