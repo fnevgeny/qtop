@@ -749,7 +749,7 @@ static void usage(const char *arg0, FILE *out)
         DEFAULT_HISTORY);
     fprintf(out, "  -S            include array subjobs\n");
     fprintf(out, "  -R <secs>     refresh period [%d]\n", refresh_period);
-    fprintf(out, "  -v            print version info and exit\n");
+    fprintf(out, "  -V            print version info and exit\n");
     fprintf(out, "  -h            print this help\n");
 }
 
@@ -780,7 +780,7 @@ int main(int argc, char * const argv[])
 
     int opt;
 
-    while ((opt = getopt(argc, argv, "u:q:s:fFH:R:Svh")) != -1) {
+    while ((opt = getopt(argc, argv, "u:q:s:fFH:R:SVh")) != -1) {
         switch (opt) {
         case 'u':
             if (strcmp(optarg, "all")) {
@@ -811,7 +811,7 @@ int main(int argc, char * const argv[])
         case 'S':
             subjobs = true;
             break;
-        case 'v':
+        case 'V':
             about();
             exit(0);
             break;
