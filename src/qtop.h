@@ -42,6 +42,7 @@
 #define COLOR_PAIR_JOB_S     9
 
 #define DEFAULT_REFRESH     30
+#define DEFAULT_HISTORY     24
 
 typedef struct {
     char *servername;

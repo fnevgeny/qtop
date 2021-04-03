@@ -745,7 +745,8 @@ static void usage(const char *arg0, FILE *out)
     fprintf(out, "  -s <state(s)> only show jobs in specific non-terminal state(s)\n");
     fprintf(out, "  -f            show finished jobs\n");
     fprintf(out, "  -F            only show failed jobs (implies -f)\n");
-    fprintf(out, "  -H <hours>    history span for finished jobs [24]\n");
+    fprintf(out, "  -H <hours>    history span for finished jobs [%d]\n",
+        DEFAULT_HISTORY);
     fprintf(out, "  -S            include array subjobs\n");
     fprintf(out, "  -R <secs>     refresh period [%d]\n", refresh_period);
     fprintf(out, "  -v            print version info and exit\n");
@@ -767,7 +768,7 @@ int main(int argc, char * const argv[])
     bool finished = false;
     bool failed = false;
     bool subjobs = false;
-    int history_span = 24;
+    int history_span = DEFAULT_HISTORY;
 
     int uid = getuid();
     if (uid != 0) {
