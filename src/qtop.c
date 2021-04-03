@@ -440,9 +440,9 @@ job_t *qtop_server_jobs(qtop_t *q, int *njobs)
             (isb2 = strchr(qtmp->name, ']'))) {
             if (isb1 + 1 == isb2) {
                 job->is_array = true;
-                sscanf(qtmp->name, "%ud[]", &job->id);
+                sscanf(qtmp->name, "%u[]", &job->id);
             } else {
-                sscanf(qtmp->name, "%ud[%ud]", &job->id, &job->aid);
+                sscanf(qtmp->name, "%u[%u]", &job->id, &job->aid);
             }
         } else {
             job->id = atoi(qtmp->name);
