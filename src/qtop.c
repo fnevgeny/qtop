@@ -721,14 +721,19 @@ static void print_job_details(const qtop_t *q, const job_t *job)
     wrefresh(q->jwin);
 }
 
-static int refresh_period = 30;
+static int refresh_period = DEFAULT_REFRESH;
 
 volatile sig_atomic_t need_update = false;
 void catch_alarm(int sig)
 {
+    if (sig != SIGALRM) {
+        return;
+    }
+
     need_update = true;
-    signal(sig, catch_alarm);
-    alarm(refresh_period);
+    if (refresh_period) {
+        alarm(refresh_period);
+    }
 }
 
 static void usage(const char *arg0, FILE *out)
@@ -742,6 +747,7 @@ static void usage(const char *arg0, FILE *out)
     fprintf(out, "  -F            only show failed jobs (implies -f)\n");
     fprintf(out, "  -H <hours>    history span for finished jobs [24]\n");
     fprintf(out, "  -S            include array subjobs\n");
+    fprintf(out, "  -R <secs>     refresh period [%d]\n", refresh_period);
     fprintf(out, "  -v            print version info and exit\n");
     fprintf(out, "  -h            print this help\n");
 }
@@ -773,7 +779,7 @@ int main(int argc, char * const argv[])
 
     int opt;
 
-    while ((opt = getopt(argc, argv, "u:q:s:fFH:Svh")) != -1) {
+    while ((opt = getopt(argc, argv, "u:q:s:fFH:R:Svh")) != -1) {
         switch (opt) {
         case 'u':
             if (strcmp(optarg, "all")) {
@@ -797,6 +803,9 @@ int main(int argc, char * const argv[])
             break;
         case 'H':
             history_span = atoi(optarg);
+            break;
+        case 'R':
+            refresh_period = atoi(optarg);
             break;
         case 'S':
             subjobs = true;
@@ -861,7 +870,9 @@ int main(int argc, char * const argv[])
     qsort(jobs, njobs, sizeof(job_t), job_comp);
 
     signal(SIGALRM, catch_alarm);
-    alarm(refresh_period);
+    if (refresh_period) {
+        alarm(refresh_period);
+    }
 
     bool job_details = false;
     bool first_time = true;

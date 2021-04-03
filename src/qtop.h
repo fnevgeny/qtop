@@ -41,6 +41,8 @@
 #define COLOR_PAIR_JOB_BAD   8
 #define COLOR_PAIR_JOB_S     9
 
+#define DEFAULT_REFRESH     30
+
 typedef struct {
     char *servername;
 
