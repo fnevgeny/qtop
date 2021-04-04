@@ -103,6 +103,7 @@ typedef struct {
 
     bool is_array;
     unsigned int aid;
+    bool is_last_subjob;
 
     job_state_t state;
 

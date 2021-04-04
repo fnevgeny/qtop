@@ -349,12 +349,13 @@ static struct attropl *attropl_add(struct attropl *a,
     return new;
 }
 
-job_t *qtop_server_jobs(qtop_t *q, int *njobs)
+job_t *qtop_server_jobs(qtop_t *q, int *njobs, int ajob_id_expanded)
 {
-    struct batch_status *qstatus, *qtmp;
+    struct batch_status *qstatus, *qstatus_sub = NULL, *qtmp;
     struct attrl *qattribs = NULL;
     struct attropl *criteria_list = NULL;
     char extend[3] = "";
+    int nsubjobs = 0;
 
     if (q->subjobs) {
         strcat(extend, "t");
@@ -419,15 +420,36 @@ job_t *qtop_server_jobs(qtop_t *q, int *njobs)
     }
     *njobs = jid;
 
+    char idbuf[32];
+    if (ajob_id_expanded > 0) {
+        sprintf(idbuf, "%d[]", ajob_id_expanded);
+        qstatus_sub = pbs_statjob(q->conn, idbuf, qattribs, "xt");
+        if (qstatus_sub != NULL) {
+            jid = 0;
+            qtmp = qstatus_sub;
+            while (qtmp) {
+                jid++;
+                qtmp = qtmp->next;
+            }
+            // 1 is for the parent job
+            nsubjobs = jid - 1;
+            *njobs += nsubjobs;
+        }
+    }
+
     job_t *jobs = calloc(*njobs, sizeof(job_t));
     if (!jobs) {
         *njobs = 0;
         pbs_statfree(qstatus);
+        if (qstatus_sub) {
+            pbs_statfree(qstatus_sub);
+        }
         return NULL;
     }
 
     qtmp = qstatus;
     jid = 0;
+    bool in_subjobs = false;
     while (qtmp) {
         job_t *job = jobs + jid;
 
@@ -450,6 +472,14 @@ job_t *qtop_server_jobs(qtop_t *q, int *njobs)
 
         parse_job_attribs(job, qtmp->attribs);
         qtmp = qtmp->next;
+        if (qtmp == NULL && !in_subjobs && qstatus_sub != NULL) {
+            // Skip the parent array job itself; it's already in the list
+            qtmp = qstatus_sub->next;
+            in_subjobs = true;
+        }
+        if (in_subjobs && qtmp == NULL) {
+            job->is_last_subjob = true;
+        }
         jid++;
     }
 
@@ -457,6 +487,9 @@ job_t *qtop_server_jobs(qtop_t *q, int *njobs)
     xfree(qattribs);
     attropl_free(criteria_list);
     pbs_statfree(qstatus);
+    if (qstatus_sub) {
+        pbs_statfree(qstatus_sub);
+    }
 
     return jobs;
 }
@@ -512,6 +545,15 @@ static bool format_time(int secs, char buf[9])
         sprintf(buf, "**:%02d:%02d", mm, ss);
         return false;
     }
+}
+
+static int get_idlen(unsigned int id)
+{
+    int len = 1;
+    while (id /= 10) {
+        len++;
+    }
+    return len;
 }
 
 void print_jobs(const job_t *jobs, int njobs, WINDOW *win, int selpos)
@@ -619,7 +661,19 @@ void print_jobs(const job_t *jobs, int njobs, WINDOW *win, int selpos)
         if (job->is_array) {
             wattron(win, A_BOLD);
         }
-        mvwprintw(win, i, 0, "%8d", job->id);
+        if (job->aid) {
+            int idlen = get_idlen(job->id);
+            int aidlen = get_idlen(job->aid);
+            int treesym = job->is_last_subjob ? ACS_LLCORNER:ACS_LTEE;
+            int is;
+            mvwaddch(win, i, 8 - idlen, treesym);
+            for (is = 0; is < idlen - aidlen; is++) {
+                waddch(win, ACS_HLINE);
+            }
+            mvwprintw(win, i, 8 - aidlen, "%d", job->aid);
+        } else {
+            mvwprintw(win, i, 0, "%8d", job->id);
+        }
         if (job->is_array) {
             wattroff(win, A_BOLD);
         }
@@ -728,6 +782,15 @@ static void print_job_details(const qtop_t *q, const job_t *job)
     }
 
     wrefresh(q->jwin);
+}
+
+static job_t *get_job(job_t *jobs, int njobs, int jid)
+{
+    if (jobs && jid >= 0 && jid < njobs) {
+        return jobs + jid;
+    } else {
+        return NULL;
+    }
 }
 
 static int refresh_period = DEFAULT_REFRESH;
@@ -876,7 +939,7 @@ int main(int argc, char * const argv[])
     qtop_server_update(qtop, pbs);
 
     int njobs;
-    job_t *jobs = qtop_server_jobs(qtop, &njobs);
+    job_t *jobs = qtop_server_jobs(qtop, &njobs, 0);
     qsort(jobs, njobs, sizeof(job_t), job_comp);
 
     signal(SIGALRM, catch_alarm);
@@ -889,10 +952,12 @@ int main(int argc, char * const argv[])
     int ch = 0;
     int jid_start = 0;
     int selpos = 0;
+    unsigned int ajob_id_expanded = 0;
     do {
         int page_lines = LINES - HEADER_NROWS;
         int ij;
         bool need_joblist_refresh = true;
+        job_t *ajob;
         
         switch (ch) {
         case KEY_UP:
@@ -923,13 +988,24 @@ int main(int argc, char * const argv[])
         case KEY_ENTER:
             job_details = !job_details;
             break;
+        case ' ':
+            ajob = get_job(jobs, njobs, jid_start + selpos);
+            if (ajob && ajob->is_array) {
+                need_update = true;
+                if (ajob_id_expanded == ajob->id) {
+                    ajob_id_expanded = 0;
+                } else {
+                    ajob_id_expanded = ajob->id;
+                }
+            }
+            break;
         case 27:
             job_details = false;
             break;
         case KEY_RESIZE:
-             delwin(qtop->jwin);
-             qtop->jwin = newwin(LINES - HEADER_NROWS, COLS, HEADER_NROWS, 0);
-             break;
+            delwin(qtop->jwin);
+            qtop->jwin = newwin(LINES - HEADER_NROWS, COLS, HEADER_NROWS, 0);
+            break;
         default:
             need_joblist_refresh = false;
             break;
@@ -952,11 +1028,11 @@ int main(int argc, char * const argv[])
             }
             xfree(jobs);
 
-            jobs = qtop_server_jobs(qtop, &njobs);
+            jobs = qtop_server_jobs(qtop, &njobs, ajob_id_expanded);
             if (!jobs && pbs_errno == PBSE_EXPIRED) {
                 qtop_reconnect(qtop);
                 qtop_server_update(qtop, pbs);
-                jobs = qtop_server_jobs(qtop, &njobs);
+                jobs = qtop_server_jobs(qtop, &njobs, ajob_id_expanded);
             }
             qsort(jobs, njobs, sizeof(job_t), job_comp);
         }
@@ -997,7 +1073,7 @@ int main(int argc, char * const argv[])
         print_server_stats(pbs, stdscr);
 
         if (job_details) {
-            print_job_details(qtop, jobs + jid_start + selpos);
+            print_job_details(qtop, get_job(jobs, njobs, jid_start + selpos));
         } else
         if (need_joblist_refresh) {
             print_jobs(jobs + jid_start, njobs - jid_start, stdscr, selpos);
