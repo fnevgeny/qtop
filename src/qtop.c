@@ -480,9 +480,18 @@ void print_server_stats(const server_t *pbs, WINDOW *win)
         pbs->njobs_r, pbs->njobs_q, pbs->njobs_w, pbs->njobs_h,
         pbs->njobs_t, pbs->njobs_e, pbs->njobs_b, njobs_x);
 
-    mvwprintw(win, 1, 0, "Mem: %.1f GB, VMem: %.1f GB, Cores: %d (SP:%d + MP:%d)  %s",
+    // prepare X coordinate for the timer - if possible,
+    // right-aligned to the upper header line
+    int x, y;
+    getyx(win, y, x);
+    if (y > 0) {
+        x = COLS;
+    }
+
+    mvwprintw(win, 1, 0, "Mem: %.1f GB, VMem: %.1f GB, Cores: %d (SP:%d + MP:%d)",
         pbs->mem/gb_scale, pbs->vmem/gb_scale, pbs->ncpus,
-        pbs->ncpus - pbs->mpiprocs, pbs->mpiprocs, datebuf);
+        pbs->ncpus - pbs->mpiprocs, pbs->mpiprocs);
+    mvwprintw(win, 1, x - 8, "%s", datebuf);
 
     wattroff(win, COLOR_PAIR(COLOR_PAIR_HEADER));
     wrefresh(win);
