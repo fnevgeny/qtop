@@ -980,6 +980,15 @@ int main(int argc, char * const argv[])
         if (selpos >= njobs - jid_start) {
             selpos = njobs - jid_start - 1;
         }
+        if (selpos < 0) {
+            selpos = 0;
+        }
+
+        // If there are no jobs selected, ignore the request to show details
+        // of any
+        if (!njobs) {
+            job_details = false;
+        }
 
         if (!job_details && need_joblist_refresh) {
             werase(stdscr);
