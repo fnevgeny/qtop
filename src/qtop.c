@@ -279,6 +279,9 @@ static void parse_job_attribs(job_t *job, const struct attrl *attribs)
             if (!strcmp(qattr->resource, "ncpus")) {
                 job->ncpus_r = atoi(qattr->value);
             } else
+            if (!strcmp(qattr->resource, "nodect")) {
+                job->nodect_r = atoi(qattr->value);
+            } else
             if (!strcmp(qattr->resource, "walltime")) {
                 job->walltime_r = parse_resource(qattr->resource, qattr->value, &type);
             } else
@@ -628,6 +631,7 @@ void print_jobs(const job_t *jobs, int njobs, WINDOW *win, int selpos)
         // Test for "badness" only jobs that have run at last 2 min
         if (job->walltime_u > 120) {
             double cpuutil_min, cpuutil_max = 1.25;
+            unsigned int nodect = job->nodect_r;
             if (ncpus == 1) {
                 cpuutil_min = 0.5;
                 if (job->io_r > 1.0) {
@@ -637,12 +641,12 @@ void print_jobs(const job_t *jobs, int njobs, WINDOW *win, int selpos)
             if (ncpus == 2) {
                 cpuutil_min = 0.55;
             } else {
-                cpuutil_min = 1 - 1.0/ncpus;
+                cpuutil_min = 1 - 1.0*nodect/ncpus;
             }
             double mem_unused = (job->mem_r - job->mem_u)/gb_scale;
             int walltime_unused = job->walltime_r - job->walltime_u;
             if (cpuutil < cpuutil_min || cpuutil > cpuutil_max ||
-                (memutil > 0 && mem_unused > 2.0 && memutil < 0.5) ||
+                (memutil > 0 && mem_unused/nodect > 2.0 && memutil < 0.5) ||
                 (job->state == JOB_FINISHED && walltime_unused > 7200 &&
                  wallutil > 0 && wallutil < 0.5)) {
                 cpair = COLOR_PAIR_JOB_BAD;

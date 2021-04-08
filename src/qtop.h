@@ -111,6 +111,7 @@ typedef struct {
     long mem_r;
     long vmem_r;
     unsigned int ncpus_r;
+    unsigned int nodect_r;
     long cput_r;
     long walltime_r;
     double io_r;
