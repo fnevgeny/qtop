@@ -181,6 +181,11 @@ qtop_t *qtop_new(char *servername)
     if (!servername) {
         servername = pbs_default();
     }
+    if (!servername) {
+        qtop_free(q);
+        return NULL;
+    }
+
     q->servername = strdup(servername);
 
     q->conn = pbs_connect(servername);
