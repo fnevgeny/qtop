@@ -2,5 +2,7 @@ cmake_minimum_required(VERSION 3.0)
 
 project(QTOP)
 
-add_subdirectory(src)
+include(GNUInstallDirs)
 
+add_subdirectory(src)
+add_subdirectory(man)
