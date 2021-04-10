@@ -1,6 +1,9 @@
-# qtop - a top-like job viewer for OpenPBS
+# qtop - a top-like job viewer for OpenPBS or PSBPro
 
-qtop aims to help in monitoring and analyzing status/performance of jobs.
+About
+=====
+
+qtop aims to help in monitoring and analyzing performance of jobs.
 
 By default, it will list all your active (i.e., not finished) jobs. To list
 finished ones (by default, during the last 24 hours), use the `-f` switch. With
@@ -34,3 +37,21 @@ I/O job with a respective `io` set);
 
 * (For finished jobs) walltime utilization is less than 50% with at least 2
 hours unused.
+
+Installation
+============
+
+To compile, you will need cmake (version 3+) and *PBS and ncurses development
+packages installed.
+
+E.g., under CentOS,
+
+    sudo yum install -y cmake3 openpbs-devel ncurses-devel
+
+Then
+
+    mkdir build/
+    cd build/
+    cmake ..
+    make
+    sudo make install
