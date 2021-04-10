@@ -538,7 +538,7 @@ void print_server_stats(const server_t *pbs, WINDOW *win)
     wrefresh(win);
 }
 
-static bool format_time(int secs, char buf[9])
+static bool format_time(unsigned int secs, char buf[9])
 {
     int hh, mm, ss;
     
