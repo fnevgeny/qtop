@@ -10,6 +10,6 @@ find_library(PBS_LIBRARY NAMES pbs PATHS "/opt/pbs/lib")
 
 target_include_directories(qtop PUBLIC ${PBS_INCLUDE_DIR})
 
-target_link_libraries(qtop LINK_PUBLIC ${PBS_LIBRARY} ncurses)
+target_link_libraries(qtop LINK_PUBLIC ${PBS_LIBRARY} ncurses z dl pthread)
 
 install(TARGETS qtop DESTINATION bin)
