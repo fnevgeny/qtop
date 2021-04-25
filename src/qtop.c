@@ -568,11 +568,11 @@ void print_jobs(const job_t *jobs, int njobs, WINDOW *win, int selpos)
 {
     int i;
 
-    wattron(win, COLOR_PAIR(COLOR_PAIR_JHEADER) | A_BOLD);
+    wattron(win, COLOR_PAIR(COLOR_PAIR_JHEADER) | A_REVERSE);
     const char *header =
         "  Job ID     User    Queue S    Mem %Mem   VMem  NC %CPU Walltime I/O Name";
     mvwprintw(win, HEADER_NROWS - 1, 0, "%-*s", COLS, header);
-    wattroff(win, COLOR_PAIR(COLOR_PAIR_JHEADER) | A_BOLD);
+    wattroff(win, COLOR_PAIR(COLOR_PAIR_JHEADER) | A_REVERSE);
 
     const double gb_scale = pow(2, 20);
     const job_t *job = jobs;
@@ -930,18 +930,22 @@ int main(int argc, char * const argv[])
     curs_set(0);
     timeout(1000);
 
-    start_color();
-    use_default_colors();
-    init_color(COLOR_WHITE, 1000, 1000, 1000);
-    init_pair(COLOR_PAIR_HEADER,    COLOR_BLUE,    COLOR_WHITE);
-    init_pair(COLOR_PAIR_JHEADER,   COLOR_WHITE,   COLOR_BLACK);
-    init_pair(COLOR_PAIR_JOB_R,     COLOR_GREEN,   COLOR_WHITE);
-    init_pair(COLOR_PAIR_JOB_Q,     COLOR_CYAN,    COLOR_WHITE);
-    init_pair(COLOR_PAIR_JOB_W,     COLOR_YELLOW,  COLOR_WHITE);
-    init_pair(COLOR_PAIR_JOB_H,     COLOR_MAGENTA, COLOR_WHITE);
-    init_pair(COLOR_PAIR_JOB_S,     COLOR_YELLOW,  COLOR_WHITE);
-    init_pair(COLOR_PAIR_JOB_OTHER, COLOR_BLACK,   COLOR_WHITE);
-    init_pair(COLOR_PAIR_JOB_BAD,   COLOR_RED,     COLOR_WHITE);
+    if (has_colors()) {
+        start_color();
+        use_default_colors();
+        if (can_change_color()) {
+            init_color(COLOR_WHITE, 1000, 1000, 1000);
+        }
+        init_pair(COLOR_PAIR_HEADER,    COLOR_BLUE,    -1);
+        init_pair(COLOR_PAIR_JHEADER,           -1,    -1);
+        init_pair(COLOR_PAIR_JOB_R,     COLOR_GREEN,   -1);
+        init_pair(COLOR_PAIR_JOB_Q,     COLOR_CYAN,    -1);
+        init_pair(COLOR_PAIR_JOB_W,     COLOR_YELLOW,  -1);
+        init_pair(COLOR_PAIR_JOB_H,     COLOR_MAGENTA, -1);
+        init_pair(COLOR_PAIR_JOB_S,     COLOR_YELLOW,  -1);
+        init_pair(COLOR_PAIR_JOB_OTHER, COLOR_BLACK,   -1);
+        init_pair(COLOR_PAIR_JOB_BAD,   COLOR_RED,     -1);
+    }
 
     qtop->jwin = newwin(LINES - HEADER_NROWS, COLS, HEADER_NROWS, 0);
 
