@@ -830,6 +830,7 @@ static void usage(const char *arg0, FILE *out)
         DEFAULT_HISTORY);
     fprintf(out, "  -S            include array subjobs\n");
     fprintf(out, "  -R <secs>     refresh period [%d]\n", refresh_period);
+    fprintf(out, "  -C            start in monochrome mode\n");
     fprintf(out, "  -V            print version info and exit\n");
     fprintf(out, "  -h            print this help\n");
 }
@@ -850,6 +851,7 @@ int main(int argc, char * const argv[])
     bool failed = false;
     bool subjobs = false;
     int history_span = DEFAULT_HISTORY;
+    bool bw = false;
 
     int uid = getuid();
     if (uid != 0) {
@@ -861,7 +863,7 @@ int main(int argc, char * const argv[])
 
     int opt;
 
-    while ((opt = getopt(argc, argv, "u:q:s:fFH:R:SVh")) != -1) {
+    while ((opt = getopt(argc, argv, "u:q:s:fFH:R:SCVh")) != -1) {
         switch (opt) {
         case 'u':
             if (strcmp(optarg, "all")) {
@@ -891,6 +893,9 @@ int main(int argc, char * const argv[])
             break;
         case 'S':
             subjobs = true;
+            break;
+        case 'C':
+            bw = true;
             break;
         case 'V':
             about();
@@ -930,7 +935,7 @@ int main(int argc, char * const argv[])
     curs_set(0);
     timeout(1000);
 
-    if (has_colors()) {
+    if (!bw && has_colors()) {
         start_color();
         use_default_colors();
         if (can_change_color()) {
