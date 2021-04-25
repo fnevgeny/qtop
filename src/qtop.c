@@ -935,6 +935,9 @@ int main(int argc, char * const argv[])
         use_default_colors();
         if (can_change_color()) {
             init_color(COLOR_WHITE, 1000, 1000, 1000);
+            init_color(COLOR_RED,    800,  100,  100);
+            init_color(COLOR_BLUE,     0,  400, 1000);
+            init_color(COLOR_GREEN,    0,  800,  100);
         }
         init_pair(COLOR_PAIR_HEADER,    COLOR_BLUE,    -1);
         init_pair(COLOR_PAIR_JHEADER,           -1,    -1);
