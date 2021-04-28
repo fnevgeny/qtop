@@ -90,9 +90,10 @@ static void print_attribs(WINDOW *win, const struct attrl *attribs)
     getmaxyx(win, maxy, maxx);
     const struct attrl *qattr = attribs;
     while (qattr && y < maxy - 1) {
-        // Skip over lengthy/rarely important stuff...
+        // Skip over lengthy/JSDL/rarely important stuff...
         if (strcmp(qattr->name, ATTR_v) &&
-            strcmp(qattr->name, ATTR_submit_arguments)) {
+            strcmp(qattr->name, ATTR_submit_arguments) &&
+            strcmp(qattr->name, ATTR_Arglist)) {
             if (qattr->resource != NULL) {
                 mvwprintw(win, y, 1, "%s.%s = ", qattr->name, qattr->resource);
             } else {
