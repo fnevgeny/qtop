@@ -94,16 +94,26 @@ static void print_attribs(WINDOW *win, const struct attrl *attribs)
         if (strcmp(qattr->name, ATTR_v) &&
             strcmp(qattr->name, ATTR_submit_arguments) &&
             strcmp(qattr->name, ATTR_Arglist)) {
+            char *vstr;
             if (qattr->resource != NULL) {
                 mvwprintw(win, y, 1, "%s.%s = ", qattr->name, qattr->resource);
             } else {
                 mvwprintw(win, y, 1, "%s = ", qattr->name);
             }
             getyx(win, y, x);
-            if (x + (int)strlen(qattr->value) >= maxx - 1) {
-                qattr->value[maxx - x - 1] = '\0';
+            if (!strcmp(qattr->name + 1, "time")) {
+                time_t timer = atol(qattr->value);
+                char tbuf[64];
+                struct tm* tm_info = localtime(&timer);
+                strftime(tbuf, 64, "%Y-%m-%d %H:%M:%S %Z", tm_info);
+                vstr = tbuf;
+            } else {
+                vstr = qattr->value;
             }
-            mvwprintw(win, y, x, "%s", qattr->value);
+            if (x + (int)strlen(vstr) >= maxx - 1) {
+                vstr[maxx - x - 1] = '\0';
+            }
+            mvwprintw(win, y, x, "%s", vstr);
             y++;
         }
 
