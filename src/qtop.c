@@ -84,6 +84,19 @@ static long int parse_resource(const char *resource, const char *svalue, int *ty
     return value;
 }
 
+static bool is_absolute_time(const struct attrl *qattr)
+{
+    if (!strcmp(qattr->name + 1, "time") ||
+        !strcmp(qattr->name, ATTR_a) ||
+        !strcmp(qattr->name, ATTR_history_timestamp) ||
+        (qattr->resource != NULL &&
+         !strcmp(qattr->resource, "start_time"))) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 static void print_attribs(WINDOW *win, const struct attrl *attribs,
     unsigned int xshift)
 {
@@ -92,10 +105,7 @@ static void print_attribs(WINDOW *win, const struct attrl *attribs,
     const struct attrl *qattr = attribs;
     while (qattr && y < maxy - 1) {
         char linebuf[1024], tbuf[64], *vstr;
-        if (!strcmp(qattr->name + 1, "time") ||
-            !strcmp(qattr->name, ATTR_a) ||
-            (qattr->resource != NULL &&
-             !strcmp(qattr->resource, "start_time"))) {
+        if (is_absolute_time(qattr)) {
             time_t timer = atol(qattr->value);
             struct tm* tm_info = localtime(&timer);
             strftime(tbuf, 64, "%Y-%m-%d %H:%M:%S %Z", tm_info);
