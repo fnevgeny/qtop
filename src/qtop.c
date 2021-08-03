@@ -95,10 +95,12 @@ static void print_attribs(WINDOW *win, const struct attrl *attribs,
         if (strcmp(qattr->name, ATTR_v) &&
             strcmp(qattr->name, ATTR_submit_arguments) &&
             strcmp(qattr->name, ATTR_Arglist)) {
-            char linebuf[1024], *vstr;
-            if (!strcmp(qattr->name + 1, "time")) {
+            char linebuf[1024], tbuf[64], *vstr;
+            if (!strcmp(qattr->name + 1, "time") ||
+                !strcmp(qattr->name, ATTR_a) ||
+                (qattr->resource != NULL &&
+                 !strcmp(qattr->resource, "start_time"))) {
                 time_t timer = atol(qattr->value);
-                char tbuf[64];
                 struct tm* tm_info = localtime(&timer);
                 strftime(tbuf, 64, "%Y-%m-%d %H:%M:%S %Z", tm_info);
                 vstr = tbuf;
