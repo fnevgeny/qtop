@@ -97,6 +97,38 @@ static bool is_absolute_time(const struct attrl *qattr)
     }
 }
 
+/* A dumb JSDL decoder */
+
+#define START_JSDL_ARG  "<jsdl-hpcpa:Argument>"
+#define END_JSDL_ARG    "</jsdl-hpcpa:Argument>"
+
+static void print_jsdl_args(char *buf, size_t bufsize, const char *str)
+{
+    bool done = false;
+    size_t x = 0;
+    char *p = strstr(str, START_JSDL_ARG);
+    while (p && !done) {
+        p += strlen(START_JSDL_ARG);
+        while (p && *p != '<' && !done) {
+            buf[x] = *p;
+            if (x >= bufsize - 1) {
+                done = true;
+            } else {
+                x++;
+                p++;
+            }
+        }
+        if (!done) {
+            p = strstr(p, START_JSDL_ARG);
+            if (p) {
+                buf[x] = ' ';
+                x++;
+            }
+        }
+    }
+    buf[x] = '\0';
+}
+
 static void print_attribs(WINDOW *win, const struct attrl *attribs,
     unsigned int xshift)
 {
@@ -104,11 +136,15 @@ static void print_attribs(WINDOW *win, const struct attrl *attribs,
     getmaxyx(win, maxy, maxx);
     const struct attrl *qattr = attribs;
     while (qattr && y < maxy - 1) {
-        char linebuf[1024], tbuf[64], *vstr;
+        char linebuf[1024], tbuf[512], *vstr;
         if (is_absolute_time(qattr)) {
             time_t timer = atol(qattr->value);
             struct tm* tm_info = localtime(&timer);
             strftime(tbuf, 64, "%Y-%m-%d %H:%M:%S %Z", tm_info);
+            vstr = tbuf;
+        } else
+        if (!strcmp(qattr->name, ATTR_submit_arguments)) {
+            print_jsdl_args(tbuf, 512, qattr->value);
             vstr = tbuf;
         } else {
             vstr = qattr->value;
