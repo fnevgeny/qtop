@@ -1072,7 +1072,7 @@ int main(int argc, char * const argv[])
             need_joblist_refresh = true;
         }
 
-        if (need_update) {
+        if (need_update && !job_details) {
             need_update = false;
             need_joblist_refresh = true;
             
