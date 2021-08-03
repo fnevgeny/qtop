@@ -150,11 +150,12 @@ static void print_attribs(WINDOW *win, const struct attrl *attribs,
             vstr = qattr->value;
         }
         if (qattr->resource != NULL) {
-            sprintf(linebuf, "%s.%s = %s",
+            snprintf(linebuf, 1024, "%s.%s = %s",
                 qattr->name, qattr->resource, vstr);
         } else {
-            sprintf(linebuf, "%s = %s", qattr->name, vstr);
+            snprintf(linebuf, 1024, "%s = %s", qattr->name, vstr);
         }
+        linebuf[1023] = '\0';
         if (strlen(linebuf) > maxx + xshift - 2) {
             linebuf[maxx + xshift - 3] = '>';
             linebuf[maxx + xshift - 2] = '\0';
