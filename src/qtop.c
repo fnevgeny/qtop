@@ -130,11 +130,17 @@ static void print_jsdl_args(char *buf, size_t bufsize, const char *str)
 }
 
 static void print_attribs(WINDOW *win, const struct attrl *attribs,
-    unsigned int xshift)
+    unsigned int xshift, unsigned int yshift)
 {
     int y = 1, maxx, maxy;
     getmaxyx(win, maxy, maxx);
     const struct attrl *qattr = attribs;
+
+    while (qattr && yshift) {
+        qattr = qattr->next;
+        yshift--;
+    }
+
     while (qattr && y < maxy - 1) {
         char linebuf[1024], tbuf[512], *vstr;
         if (is_absolute_time(qattr)) {
@@ -827,7 +833,7 @@ static int job_comp(const void *a, const void *b)
 }
 
 static void print_job_details(const qtop_t *q, const job_t *job,
-    unsigned int xshift)
+    unsigned int xshift, unsigned int yshift)
 {
     werase(q->jwin);
 
@@ -846,7 +852,7 @@ static void print_job_details(const qtop_t *q, const job_t *job,
         mvwprintw(q->jwin, 0, 1, "Job ID = %s", idbuf);
         struct batch_status *qstatus = pbs_statjob(q->conn, idbuf, NULL, "x");
         if (qstatus) {
-            print_attribs(q->jwin, qstatus->attribs, xshift);
+            print_attribs(q->jwin, qstatus->attribs, xshift, yshift);
             pbs_statfree(qstatus);
         }
     }
@@ -1034,7 +1040,7 @@ int main(int argc, char * const argv[])
     int ch = 0;
     int jid_start = 0;
     int selpos = 0;
-    unsigned int xshift = 0;
+    unsigned int xshift = 0, yshift = 0;
     unsigned int ajob_id_expanded = 0;
     do {
         int page_lines = LINES - HEADER_NROWS;
@@ -1044,10 +1050,26 @@ int main(int argc, char * const argv[])
         
         switch (ch) {
         case KEY_UP:
-            selpos--;
+            if (job_details) {
+                if (yshift > 0) {
+                    yshift--;
+                }
+            } else {
+                selpos--;
+            }
             break;
         case KEY_DOWN:
+            if (job_details) {
+                yshift++;
+            } else {
+                selpos++;
+            }
+            break;
+        case 'j':
             selpos++;
+            break;
+        case 'k':
+            selpos--;
             break;
         case KEY_LEFT:
             if (job_details && xshift > 0) {
@@ -1167,9 +1189,10 @@ int main(int argc, char * const argv[])
 
         if (job_details) {
             print_job_details(qtop, get_job(jobs, njobs, jid_start + selpos),
-                xshift);
+                xshift, yshift);
         } else {
             xshift = 0;
+            yshift = 0;
             if (need_joblist_refresh) {
                 print_jobs(jobs + jid_start, njobs - jid_start, stdscr, selpos);
             }
