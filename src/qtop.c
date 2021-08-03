@@ -91,37 +91,32 @@ static void print_attribs(WINDOW *win, const struct attrl *attribs,
     getmaxyx(win, maxy, maxx);
     const struct attrl *qattr = attribs;
     while (qattr && y < maxy - 1) {
-        // Skip over lengthy/JSDL/rarely important stuff...
-        if (strcmp(qattr->name, ATTR_v) &&
-            strcmp(qattr->name, ATTR_submit_arguments) &&
-            strcmp(qattr->name, ATTR_Arglist)) {
-            char linebuf[1024], tbuf[64], *vstr;
-            if (!strcmp(qattr->name + 1, "time") ||
-                !strcmp(qattr->name, ATTR_a) ||
-                (qattr->resource != NULL &&
-                 !strcmp(qattr->resource, "start_time"))) {
-                time_t timer = atol(qattr->value);
-                struct tm* tm_info = localtime(&timer);
-                strftime(tbuf, 64, "%Y-%m-%d %H:%M:%S %Z", tm_info);
-                vstr = tbuf;
-            } else {
-                vstr = qattr->value;
-            }
-            if (qattr->resource != NULL) {
-                sprintf(linebuf, "%s.%s = %s",
-                    qattr->name, qattr->resource, vstr);
-            } else {
-                sprintf(linebuf, "%s = %s", qattr->name, vstr);
-            }
-            if (strlen(linebuf) > maxx + xshift - 2) {
-                linebuf[maxx + xshift - 3] = '>';
-                linebuf[maxx + xshift - 2] = '\0';
-            }
-            if (strlen(linebuf) > xshift) {
-                mvwprintw(win, y, 1, "%s", linebuf + xshift);
-            }
-            y++;
+        char linebuf[1024], tbuf[64], *vstr;
+        if (!strcmp(qattr->name + 1, "time") ||
+            !strcmp(qattr->name, ATTR_a) ||
+            (qattr->resource != NULL &&
+             !strcmp(qattr->resource, "start_time"))) {
+            time_t timer = atol(qattr->value);
+            struct tm* tm_info = localtime(&timer);
+            strftime(tbuf, 64, "%Y-%m-%d %H:%M:%S %Z", tm_info);
+            vstr = tbuf;
+        } else {
+            vstr = qattr->value;
         }
+        if (qattr->resource != NULL) {
+            sprintf(linebuf, "%s.%s = %s",
+                qattr->name, qattr->resource, vstr);
+        } else {
+            sprintf(linebuf, "%s = %s", qattr->name, vstr);
+        }
+        if (strlen(linebuf) > maxx + xshift - 2) {
+            linebuf[maxx + xshift - 3] = '>';
+            linebuf[maxx + xshift - 2] = '\0';
+        }
+        if (strlen(linebuf) > xshift) {
+            mvwprintw(win, y, 1, "%s", linebuf + xshift);
+        }
+        y++;
 
         qattr = qattr->next;
     }
