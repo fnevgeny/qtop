@@ -47,7 +47,7 @@ finished ones (by default, during the last 24 hours), use the \fB-f\fR switch.
 With \fB-F\fR, only the failed jobs are listed. Evidently, this works only if
 the server is configured to keep the job history.
 .P
-Use Arrow up/down, Page up/down, Home, and End to navigate the list.
+Use Arrow up/down (or k/j), Page up/down, Home, and End to navigate the list.
 .P
 By default, the list is automatically refreshed every 30 seconds. Press "r" to
 force a refresh.
@@ -59,8 +59,11 @@ are listed (for queued jobs, the respective requested values are shown). In
 addition, there are CPU and memory utilization (%) metrics, calculated as a
 used/requested ratio.
 .P
-Press "Enter" to see a detailed report (similar to \fBqstat -f\fR) of a currently
-highlighted job. "Enter" again or "Escape" to exit this mode.
+Press "Enter" to see a detailed report (similar to \fBqstat -f\fR) of a
+currently highlighted job. Use Arrow up/down and left/right to scroll vertically
+and horizontally. All other job-list-navigation keys continue to be active, so
+one can quickly browse through multiple jobs. "Enter" again or "Escape" to exit
+this mode.
 .P
 ID's of array jobs are typeset in bold. Press "space" to expand, showing
 subjobs.
