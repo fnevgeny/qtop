@@ -540,7 +540,8 @@ void print_server_stats(const server_t *pbs, WINDOW *win)
         x = COLS;
     }
 
-    mvwprintw(win, 1, 0, "Mem: %.1f GB, VMem: %.1f GB, Cores: %d (SP:%d + MP:%d)",
+    mvwprintw(win, 1, 0,
+        "Mem: %.1f GiB, VMem: %.1f GiB, Cores: %d (SP:%d + MP:%d)",
         pbs->mem/gb_scale, pbs->vmem/gb_scale, pbs->ncpus,
         pbs->ncpus - pbs->mpiprocs, pbs->mpiprocs);
     mvwprintw(win, 1, x - 8, "%s", datebuf);
