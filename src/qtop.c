@@ -84,9 +84,10 @@ static long int parse_resource(const char *resource, const char *svalue, int *ty
     return value;
 }
 
-static void print_attribs(WINDOW *win, const struct attrl *attribs)
+static void print_attribs(WINDOW *win, const struct attrl *attribs,
+    unsigned int xshift)
 {
-    int y = 1, x, maxx, maxy;
+    int y = 1, maxx, maxy;
     getmaxyx(win, maxy, maxx);
     const struct attrl *qattr = attribs;
     while (qattr && y < maxy - 1) {
@@ -94,13 +95,7 @@ static void print_attribs(WINDOW *win, const struct attrl *attribs)
         if (strcmp(qattr->name, ATTR_v) &&
             strcmp(qattr->name, ATTR_submit_arguments) &&
             strcmp(qattr->name, ATTR_Arglist)) {
-            char *vstr;
-            if (qattr->resource != NULL) {
-                mvwprintw(win, y, 1, "%s.%s = ", qattr->name, qattr->resource);
-            } else {
-                mvwprintw(win, y, 1, "%s = ", qattr->name);
-            }
-            getyx(win, y, x);
+            char linebuf[1024], *vstr;
             if (!strcmp(qattr->name + 1, "time")) {
                 time_t timer = atol(qattr->value);
                 char tbuf[64];
@@ -110,10 +105,19 @@ static void print_attribs(WINDOW *win, const struct attrl *attribs)
             } else {
                 vstr = qattr->value;
             }
-            if (x + (int)strlen(vstr) >= maxx - 1) {
-                vstr[maxx - x - 1] = '\0';
+            if (qattr->resource != NULL) {
+                sprintf(linebuf, "%s.%s = %s",
+                    qattr->name, qattr->resource, vstr);
+            } else {
+                sprintf(linebuf, "%s = %s", qattr->name, vstr);
             }
-            mvwprintw(win, y, x, "%s", vstr);
+            if (strlen(linebuf) > maxx + xshift - 2) {
+                linebuf[maxx + xshift - 3] = '>';
+                linebuf[maxx + xshift - 2] = '\0';
+            }
+            if (strlen(linebuf) > xshift) {
+                mvwprintw(win, y, 1, "%s", linebuf + xshift);
+            }
             y++;
         }
 
@@ -778,7 +782,8 @@ static int job_comp(const void *a, const void *b)
     return cmp;
 }
 
-static void print_job_details(const qtop_t *q, const job_t *job)
+static void print_job_details(const qtop_t *q, const job_t *job,
+    unsigned int xshift)
 {
     werase(q->jwin);
 
@@ -797,7 +802,7 @@ static void print_job_details(const qtop_t *q, const job_t *job)
         mvwprintw(q->jwin, 0, 1, "Job ID = %s", idbuf);
         struct batch_status *qstatus = pbs_statjob(q->conn, idbuf, NULL, "x");
         if (qstatus) {
-            print_attribs(q->jwin, qstatus->attribs);
+            print_attribs(q->jwin, qstatus->attribs, xshift);
             pbs_statfree(qstatus);
         }
     }
@@ -985,6 +990,7 @@ int main(int argc, char * const argv[])
     int ch = 0;
     int jid_start = 0;
     int selpos = 0;
+    unsigned int xshift = 0;
     unsigned int ajob_id_expanded = 0;
     do {
         int page_lines = LINES - HEADER_NROWS;
@@ -998,6 +1004,16 @@ int main(int argc, char * const argv[])
             break;
         case KEY_DOWN:
             selpos++;
+            break;
+        case KEY_LEFT:
+            if (job_details && xshift > 0) {
+                xshift--;
+            }
+            break;
+        case KEY_RIGHT:
+            if (job_details) {
+                xshift++;
+            }
             break;
         case KEY_PPAGE:
             jid_start -= page_lines;
@@ -1106,10 +1122,13 @@ int main(int argc, char * const argv[])
         print_server_stats(pbs, stdscr);
 
         if (job_details) {
-            print_job_details(qtop, get_job(jobs, njobs, jid_start + selpos));
-        } else
-        if (need_joblist_refresh) {
-            print_jobs(jobs + jid_start, njobs - jid_start, stdscr, selpos);
+            print_job_details(qtop, get_job(jobs, njobs, jid_start + selpos),
+                xshift);
+        } else {
+            xshift = 0;
+            if (need_joblist_refresh) {
+                print_jobs(jobs + jid_start, njobs - jid_start, stdscr, selpos);
+            }
         }
     } while ((ch = getch()) != 'q');
 
