@@ -752,11 +752,22 @@ void print_jobs(const job_t *jobs, int njobs, WINDOW *win, int selpos)
         if (job->is_array) {
             wattroff(win, A_BOLD);
         }
+        int memprec, vmemprec;
+        if (mem/gb_scale >= 1000) {
+            memprec = 0;
+        } else {
+            memprec = 2;
+        }
+        if (vmem/gb_scale >= 1000) {
+            vmemprec = 0;
+        } else {
+            vmemprec = 2;
+        }
         wprintw(win,
-            " %8s %8s %c %6.2f  %3.0f %6.2f %3d  %3.0f %8s %3.0f %-*s",
+            " %8s %8s %c %6.*f  %3.0f %6.*f %3d  %3.0f %8s %3.0f %-*s",
             job->user, job->queue, job->state,
-            mem/gb_scale, 100*memutil, vmem/gb_scale, ncpus, 100*cpuutil, timebuf,
-            job->io_r, COLS - 70, job->name);
+            mem/gb_scale, memprec, 100*memutil, vmem/gb_scale, vmemprec, ncpus,
+            100*cpuutil, timebuf, job->io_r, COLS - 70, job->name);
         wattroff(win, cattrs);
 
         job++;
