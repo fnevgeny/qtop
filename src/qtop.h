@@ -53,6 +53,7 @@ typedef struct {
     char *username;
     char *queue;
     char *state;
+    char *exec_host;
     bool finished;
     int history_span;
     bool failed;
@@ -100,6 +101,8 @@ typedef struct {
     char *name;
     char *queue;
     char *user;
+
+    char *exec_host;
 
     bool is_array;
     unsigned int aid;

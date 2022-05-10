@@ -229,6 +229,10 @@ void qtop_free(qtop_t *q)
 {
     if (q) {
         xfree(q->servername);
+        xfree(q->username);
+        xfree(q->queue);
+        xfree(q->state);
+        xfree(q->exec_host);
         if (q->conn > 0) {
             pbs_disconnect(q->conn);
         }
@@ -315,6 +319,7 @@ static void job_free_data(job_t *job)
         xfree(job->name);
         xfree(job->queue);
         xfree(job->user);
+        xfree(job->exec_host);
     }
 }
 
@@ -337,6 +342,9 @@ static void parse_job_attribs(job_t *job, const struct attrl *attribs)
         } else
         if (!strcmp(qattr->name, ATTR_queue)) {
             job->queue = strdup(qattr->value);
+        } else
+        if (!strcmp(qattr->name, ATTR_exechost) && qattr->value) {
+            job->exec_host = strdup(qattr->value);
         } else
         if (!strcmp(qattr->name, ATTR_l)) {
             int type;
@@ -428,7 +436,7 @@ job_t *qtop_server_jobs(qtop_t *q, int *njobs, int ajob_id_expanded)
     struct attrl *qattribs = NULL;
     struct attropl *criteria_list = NULL;
     char extend[3] = "";
-    int nsubjobs = 0;
+    int nsubjobs = 0, njobs_total;
 
     if (q->subjobs) {
         strcat(extend, "t");
@@ -437,7 +445,7 @@ job_t *qtop_server_jobs(qtop_t *q, int *njobs, int ajob_id_expanded)
         strcat(extend, "x");
     }
 
-    qattribs = calloc(6, sizeof(struct attrl));
+    qattribs = calloc(7, sizeof(struct attrl));
     qattribs[0].name = ATTR_name;
     qattribs[0].value = "";
     qattribs[0].next = qattribs + 1;
@@ -453,9 +461,12 @@ job_t *qtop_server_jobs(qtop_t *q, int *njobs, int ajob_id_expanded)
     qattribs[4].name = ATTR_l;
     qattribs[4].value = "";
     qattribs[4].next = qattribs + 5;
-    qattribs[5].name = ATTR_used;
+    qattribs[5].name = ATTR_exechost;
     qattribs[5].value = "";
-    qattribs[5].next = NULL;
+    qattribs[5].next = qattribs + 6;
+    qattribs[6].name = ATTR_used;
+    qattribs[6].value = "";
+    qattribs[6].next = NULL;
 
     if (q->username != NULL) {
         criteria_list = attropl_add(criteria_list, ATTR_u, q->username, EQ);
@@ -466,6 +477,7 @@ job_t *qtop_server_jobs(qtop_t *q, int *njobs, int ajob_id_expanded)
     if (q->state) {
         criteria_list = attropl_add(criteria_list, ATTR_state, q->state, EQ);
     }
+
     if (q->finished) {
         char buf[16];
         time_t now = time(NULL);
@@ -510,6 +522,8 @@ job_t *qtop_server_jobs(qtop_t *q, int *njobs, int ajob_id_expanded)
         }
     }
 
+    njobs_total = *njobs;
+
     job_t *jobs = calloc(*njobs, sizeof(job_t));
     if (!jobs) {
         *njobs = 0;
@@ -553,7 +567,20 @@ job_t *qtop_server_jobs(qtop_t *q, int *njobs, int ajob_id_expanded)
         if (in_subjobs && qtmp == NULL) {
             job->is_last_subjob = true;
         }
-        jid++;
+        // Filter out undesired jobs
+        if (q->exec_host &&
+            (!job->exec_host || !strstr(job->exec_host, q->exec_host))) {
+            job_free_data(job);
+            memset(job, 0, sizeof(job_t));
+            (*njobs)--;
+        } else {
+            jid++;
+        }
+    }
+
+    /* free unused part of the array */
+    if (*njobs < njobs_total) {
+        jobs = realloc(jobs, (*njobs)*sizeof(job_t));
     }
 
     /* free allocated data */
@@ -902,6 +929,7 @@ static void usage(const char *arg0, FILE *out)
     fprintf(out, "  -u <username> show jobs for username\n");
     fprintf(out, "  -q <queue>    only show jobs in specific queue\n");
     fprintf(out, "  -s <state(s)> only show jobs in specific non-terminal state(s)\n");
+    fprintf(out, "  -e <host>     only show jobs running on specific host\n");
     fprintf(out, "  -f            show finished jobs\n");
     fprintf(out, "  -F            only show failed jobs (implies -f)\n");
     fprintf(out, "  -H <hours>    history span for finished jobs [%d]\n",
@@ -925,6 +953,7 @@ int main(int argc, char * const argv[])
     char *username = NULL;
     char *queue = NULL;
     char *state = NULL;
+    char *exec_host = NULL;
     bool finished = false;
     bool failed = false;
     bool subjobs = false;
@@ -941,7 +970,7 @@ int main(int argc, char * const argv[])
 
     int opt;
 
-    while ((opt = getopt(argc, argv, "u:q:s:fFH:R:SCVh")) != -1) {
+    while ((opt = getopt(argc, argv, "u:q:s:e:fFH:R:SCVh")) != -1) {
         switch (opt) {
         case 'u':
             if (strcmp(optarg, "all")) {
@@ -955,6 +984,9 @@ int main(int argc, char * const argv[])
             break;
         case 's':
             state = optarg;
+            break;
+        case 'e':
+            exec_host = optarg;
             break;
         case 'f':
             finished = true;
@@ -998,6 +1030,7 @@ int main(int argc, char * const argv[])
     qtop->username     = username;
     qtop->queue        = queue;
     qtop->state        = state;
+    qtop->exec_host    = exec_host;
     qtop->finished     = finished;
     qtop->failed       = failed;
     qtop->history_span = history_span;
