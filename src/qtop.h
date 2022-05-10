@@ -22,7 +22,7 @@
 #ifndef QTOP_H_
 #define QTOP_H_
 
-#define QTOP_VERSION "1.3"
+#define QTOP_VERSION "1.4"
 
 #define RESOURCE_TYPE_NONE  0
 #define RESOURCE_TYPE_MEM   1
