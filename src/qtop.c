@@ -671,7 +671,7 @@ void print_jobs(const job_t *jobs, int njobs, WINDOW *win, int selpos,
     int x, __attribute__ ((unused)) y;
     getyx(win, y, x);
     mvwprintw(win, HEADER_NROWS - 1, x,
-        "%-*s", COLS - x, dheader + xshift);
+        "%-*s", COLS - x, xshift < strlen(dheader) ? dheader + xshift : "");
 
     wattroff(win, COLOR_PAIR(COLOR_PAIR_JHEADER) | A_REVERSE);
 
@@ -816,7 +816,7 @@ void print_jobs(const job_t *jobs, int njobs, WINDOW *win, int selpos,
         }
         linebuf[1023] = '\0';
 
-        wprintw(win, "%s", linebuf + xshift);
+        wprintw(win, "%s", xshift < strlen(linebuf) ? linebuf + xshift : "");
 
         getyx(win, y, x);
         if (x > 0 && x < COLS) {
