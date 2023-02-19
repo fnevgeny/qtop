@@ -791,7 +791,7 @@ void print_jobs(const job_t *jobs, int njobs, WINDOW *win, int selpos)
             vmemprec = 2;
         }
         wprintw(win,
-            " %8s %8s %c %6.*f  %3.0f %6.*f %3d  %3.0f %8s %3.0f %-*s",
+            " %8s %8s %c %6.*f  %3.0f %6.*f %3d  %3.0f %8s %3.0f %-.*s",
             job->user, job->queue, job->state,
             mem/gb_scale, memprec, 100*memutil, vmem/gb_scale, vmemprec, ncpus,
             100*cpuutil, timebuf, job->io_r, COLS - 70, job->name);
