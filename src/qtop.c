@@ -657,14 +657,22 @@ static int get_idlen(unsigned int id)
     return len;
 }
 
-void print_jobs(const job_t *jobs, int njobs, WINDOW *win, int selpos)
+void print_jobs(const job_t *jobs, int njobs, WINDOW *win, int selpos,
+    unsigned int xshift)
 {
     int i;
 
     wattron(win, COLOR_PAIR(COLOR_PAIR_JHEADER) | A_REVERSE);
-    const char *header =
-        "  Job ID     User    Queue S    Mem %Mem   VMem  NC %CPU Walltime I/O Name";
-    mvwprintw(win, HEADER_NROWS - 1, 0, "%-*s", COLS, header);
+
+    mvwprintw(win, HEADER_NROWS - 1, 0, "%s", "  Job ID ");
+    const char *dheader =
+        "    User    Queue S    Mem %Mem   VMem  NC %CPU Walltime I/O Name";
+
+    int x, __attribute__ ((unused)) y;
+    getyx(win, y, x);
+    mvwprintw(win, HEADER_NROWS - 1, x,
+        "%-*s", COLS - x, dheader + xshift);
+
     wattroff(win, COLOR_PAIR(COLOR_PAIR_JHEADER) | A_REVERSE);
 
     const double gb_scale = pow(2, 20);
@@ -674,6 +682,7 @@ void print_jobs(const job_t *jobs, int njobs, WINDOW *win, int selpos)
         long cput, walltime;
         int ncpus;
         double cpuutil = 0, memutil = 0, wallutil = 0;
+        char linebuf[1024];
 
         switch (job->state) {
         case JOB_RUNNING:
@@ -779,6 +788,9 @@ void print_jobs(const job_t *jobs, int njobs, WINDOW *win, int selpos)
         if (job->is_array) {
             wattroff(win, A_BOLD);
         }
+
+        waddch(win, ' ');
+
         int memprec, vmemprec;
         if (mem/gb_scale >= 1000) {
             memprec = 0;
@@ -790,11 +802,27 @@ void print_jobs(const job_t *jobs, int njobs, WINDOW *win, int selpos)
         } else {
             vmemprec = 2;
         }
-        wprintw(win,
-            " %8s %8s %c %6.*f  %3.0f %6.*f %3d  %3.0f %8s %3.0f %-.*s",
+        sprintf(linebuf,
+            "%8s %8s %c %6.*f  %3.0f %6.*f %3d  %3.0f %8s %3.0f %s",
             job->user, job->queue, job->state,
-            mem/gb_scale, memprec, 100*memutil, vmem/gb_scale, vmemprec, ncpus,
-            100*cpuutil, timebuf, job->io_r, COLS - 70, job->name);
+            memprec, mem/gb_scale, 100*memutil, vmemprec, vmem/gb_scale, ncpus,
+            100*cpuutil, timebuf, job->io_r, job->name);
+
+        getyx(win, y, x);
+
+        if (strlen(linebuf) + x > (unsigned int) COLS + xshift) {
+            linebuf[COLS + xshift - x - 1] = '>';
+            linebuf[COLS + xshift - x] = '\0';
+        }
+        linebuf[1023] = '\0';
+
+        wprintw(win, "%s", linebuf + xshift);
+
+        getyx(win, y, x);
+        if (x > 0 && x < COLS) {
+            wprintw(win, "%*.s", COLS - x, "");
+        }
+
         wattroff(win, cattrs);
 
         job++;
@@ -1085,6 +1113,7 @@ int main(int argc, char * const argv[])
     int jid_start = 0;
     int selpos = 0;
     unsigned int xshift = 0, yshift = 0;
+    unsigned int joblist_xshift = 0;
     unsigned int ajob_id_expanded = 0;
     do {
         int page_lines = LINES - HEADER_NROWS;
@@ -1116,13 +1145,21 @@ int main(int argc, char * const argv[])
             selpos--;
             break;
         case KEY_LEFT:
-            if (job_details && xshift > 0) {
-                xshift--;
+            if (job_details) {
+                if (xshift > 0) {
+                    xshift--;
+                }
+            } else {
+                if (joblist_xshift > 0) {
+                    joblist_xshift--;
+                }
             }
             break;
         case KEY_RIGHT:
             if (job_details) {
                 xshift++;
+            } else {
+                joblist_xshift++;
             }
             break;
         case KEY_PPAGE:
@@ -1238,7 +1275,8 @@ int main(int argc, char * const argv[])
             xshift = 0;
             yshift = 0;
             if (need_joblist_refresh) {
-                print_jobs(jobs + jid_start, njobs - jid_start, stdscr, selpos);
+                print_jobs(jobs + jid_start, njobs - jid_start, stdscr, selpos,
+                    joblist_xshift);
             }
         }
     } while ((ch = getch()) != 'q');
