@@ -149,7 +149,8 @@ static void print_attribs(WINDOW *win, const struct attrl *attribs,
             strftime(tbuf, 64, "%Y-%m-%d %H:%M:%S %Z", tm_info);
             vstr = tbuf;
         } else
-        if (!strcmp(qattr->name, ATTR_submit_arguments)) {
+        if (!strcmp(qattr->name, ATTR_submit_arguments) ||
+            !strcmp(qattr->name, ATTR_Arglist)) {
             print_jsdl_args(tbuf, 512, qattr->value);
             vstr = tbuf;
         } else {
