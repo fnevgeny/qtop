@@ -2,7 +2,7 @@
  *
  * This file is part of qtop.
  *
- * Copyright 2021-2023 Evgeny Stambulchik
+ * Copyright 2021-2024 Evgeny Stambulchik
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
 #ifndef QTOP_H_
 #define QTOP_H_
 
-#define QTOP_VERSION "1.5"
+#define QTOP_VERSION "1.6"
 
 #define RESOURCE_TYPE_NONE  0
 #define RESOURCE_TYPE_MEM   1
