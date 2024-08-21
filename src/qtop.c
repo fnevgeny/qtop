@@ -792,7 +792,7 @@ void print_jobs(const job_t *jobs, int njobs, WINDOW *win, int selpos,
 
         waddch(win, ' ');
 
-        int memprec, vmemprec;
+        int memprec, vmemprec, ioprec;
         if (mem/gb_scale >= 1000) {
             memprec = 0;
         } else {
@@ -803,11 +803,16 @@ void print_jobs(const job_t *jobs, int njobs, WINDOW *win, int selpos,
         } else {
             vmemprec = 2;
         }
+        if (job->io_r > 0.0 && job->io_r < 1.0) {
+            ioprec = 1;
+        } else {
+            ioprec = 0;
+        }
         sprintf(linebuf,
-            "%8s %8s %c %6.*f  %3.0f %6.*f %3d  %3.0f %8s %3.0f %s",
+            "%8s %8s %c %6.*f  %3.0f %6.*f %3d  %3.0f %8s %3.*f %s",
             job->user, job->queue, job->state,
             memprec, mem/gb_scale, 100*memutil, vmemprec, vmem/gb_scale, ncpus,
-            100*cpuutil, timebuf, job->io_r, job->name);
+            100*cpuutil, timebuf, ioprec, job->io_r, job->name);
 
         getyx(win, y, x);
 
