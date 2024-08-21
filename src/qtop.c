@@ -747,9 +747,12 @@ void print_jobs(const job_t *jobs, int njobs, WINDOW *win, int selpos,
                 }
             } else
             if (ncpus == 2) {
-                cpuutil_min = 0.55;
-            } else {
+                cpuutil_min = 0.6;
+            } else
+            if (ncpus < 10) {
                 cpuutil_min = 1 - 1.0*nodect/ncpus;
+            } else {
+                cpuutil_min = 0.9;
             }
             double mem_unused = (job->mem_r - job->mem_u)/gb_scale;
             int walltime_unused = job->walltime_r - job->walltime_u;
