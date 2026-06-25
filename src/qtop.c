@@ -2,7 +2,7 @@
  *
  * This file is part of qtop.
  *
- * Copyright 2021-2024 Evgeny Stambulchik
+ * Copyright 2021-2026 Evgeny Stambulchik
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
