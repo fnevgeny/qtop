@@ -1037,6 +1037,127 @@ static int print_jobs_summary(const job_t *jobs, int njobs,
     return i - HEADER_NROWS;
 }
 
+static void alert(const char *message)
+{
+    int msglen = strlen(message);
+    int width  = msglen + 6;
+    int height = 7;
+
+    if (width < 24) {
+        width = 24;
+    }
+
+    int starty = (LINES - height) / 2;
+    int startx = (COLS  - width)  / 2;
+
+    WINDOW *win = newwin(height, width, starty, startx);
+    keypad(win, TRUE);
+
+    bool in_loop = true;
+    while (in_loop) {
+        werase(win);
+        box(win, 0, 0);
+
+        mvwprintw(win, 2, (width - msglen)/2, "%s", message);
+
+        int ok_x = width/2 - 3;
+
+        wattron(win, A_REVERSE);
+        mvwprintw(win, 4, ok_x, " OK ");
+        wattroff(win, A_REVERSE);
+
+        wrefresh(win);
+
+        int ch = wgetch(win);
+
+        switch (ch) {
+        case '\n':
+        case '\r':
+        case KEY_ENTER:
+        case 27: /* Esc */
+            in_loop = false;
+            break;
+        }
+    }
+
+    delwin(win);
+    touchwin(stdscr);
+    refresh();
+}
+
+static bool yes_no(const char *message)
+{
+    int msglen = strlen(message);
+    int width  = msglen + 6;
+    int height = 7;
+
+    if (width < 24) {
+        width = 24;
+    }
+
+    int starty = (LINES - height) / 2;
+    int startx = (COLS  - width)  / 2;
+
+    WINDOW *win = newwin(height, width, starty, startx);
+    keypad(win, TRUE);
+
+    int choice = 1;  /* 0 = Yes, 1 = No */
+
+    bool in_loop = true;
+    while (in_loop) {
+        werase(win);
+        box(win, 0, 0);
+
+        mvwprintw(win, 2, (width - msglen)/2, "%s", message);
+
+        int yes_x = width/2 - 8;
+        int no_x  = width/2 + 2;
+
+        if (choice == 0) {
+            wattron(win, A_REVERSE);
+        }
+        mvwprintw(win, 4, yes_x, " Yes ");
+        if (choice == 0) {
+            wattroff(win, A_REVERSE);
+        } else
+        if (choice == 1) {
+            wattron(win, A_REVERSE);
+        }
+        mvwprintw(win, 4, no_x, " No ");
+        if (choice == 1) {
+            wattroff(win, A_REVERSE);
+        }
+
+        wrefresh(win);
+
+        int ch = wgetch(win);
+
+        switch (ch) {
+        case KEY_LEFT:
+            choice = 0;
+            break;
+        case KEY_RIGHT:
+            choice = 1;
+            break;
+        case '\n':
+        case '\r':
+        case KEY_ENTER:
+            in_loop = false;
+            break;
+        case 27: /* Esc */
+            in_loop = false;
+            choice = 1;
+            break;
+        }
+    }
+
+    delwin(win);
+    touchwin(stdscr);
+    refresh();
+    return (choice == 0);
+}
+
+
 static int state_rank(job_state_t s)
 {
     int rank = 0;
@@ -1428,6 +1549,32 @@ int main(int argc, char * const argv[])
         case 27:
             if (mode == QTOP_MODE_DETAIL) {
                 mode = QTOP_MODE_JOBS;
+            }
+            break;
+        case 'd':
+        case KEY_DC:
+            if (mode == QTOP_MODE_JOBS) {
+                char idstr[32], buf[64];
+                job_t *job = get_job(jobs, njobs, jid_start + selpos);
+                if (job->is_array) {
+                    sprintf(idstr, "%d[]", job->id);
+                } else
+                if (job->aid != 0) {
+                    sprintf(idstr, "%d[%d]", job->id, job->aid);
+                } else {
+                    sprintf(idstr, "%d", job->id);
+                }
+
+                sprintf(buf, "Delete job %s?", idstr);
+
+                if (yes_no(buf)) {
+                    int err_no = pbs_deljob(qtop->conn, idstr, NULL);
+                    if (err_no == 0) {
+                        need_update = true;
+                    } else {
+                        alert(pbse_to_txt(err_no));
+                    }
+                }
             }
             break;
         case KEY_RESIZE:
