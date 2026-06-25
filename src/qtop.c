@@ -786,6 +786,10 @@ void print_jobs(const job_t *jobs, int njobs, WINDOW *win, int selpos,
             int aidlen = get_idlen(job->aid);
             int treesym = job->is_last_subjob ? ACS_LLCORNER:ACS_LTEE;
             int is;
+
+            /* clear frame line from print_job_details() */
+            mvwaddch(win, i, 0, ' ');
+
             mvwaddch(win, i, 8 - idlen, treesym);
             for (is = 0; is < idlen - aidlen; is++) {
                 waddch(win, ACS_HLINE);
