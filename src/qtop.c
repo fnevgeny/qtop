@@ -694,6 +694,7 @@ void print_jobs(const job_t *jobs, int njobs, WINDOW *win, int selpos,
         case JOB_EXITING:
         case JOB_FINISHED:
         case JOB_SUSPENDED:
+        case JOB_SUB_COMPLETED:
             mem         = job->mem_u;
             vmem        = job->vmem_u;
             cput        = job->cput_u;
@@ -892,27 +893,18 @@ static int print_jobs_summary(const job_t *jobs, int njobs,
         case JOB_EXITING:
         case JOB_FINISHED:
         case JOB_SUSPENDED:
+        case JOB_SUB_COMPLETED:
             mem         = job->mem_u;
             cput        = job->cput_u;
             walltime    = job->walltime_u;
             ncpus       = job->ncpus_u;
+            pre_state   = false;
             break;
         default:
             mem         = job->mem_r;
             cput        = job->cput_r;
             walltime    = job->walltime_r;
             ncpus       = job->ncpus_r;
-            break;
-        }
-
-        switch (current_state) {
-        case JOB_RUNNING:
-        case JOB_EXITING:
-        case JOB_FINISHED:
-        case JOB_SUSPENDED:
-            pre_state   = false;
-            break;
-        default:
             pre_state   = true;
             break;
         }
@@ -1049,12 +1041,13 @@ static int state_rank(job_state_t s)
         rank = 1;
         break;
     case JOB_SUSPENDED:
+    case JOB_SUSPENDED_U:
         rank = 2;
         break;
-    case JOB_RUNNING:
+    case JOB_SUB_RUNNING:
         rank = 3;
         break;
-    case JOB_BEGUN:
+    case JOB_RUNNING:
         rank = 4;
         break;
     case JOB_QUEUED:
@@ -1069,8 +1062,14 @@ static int state_rank(job_state_t s)
     case JOB_TRANSIT:
         rank = 8;
         break;
-    case JOB_FINISHED:
+    case JOB_SUB_COMPLETED:
         rank = 9;
+        break;
+    case JOB_FINISHED:
+        rank = 10;
+        break;
+    case JOB_MOVED:
+        rank = 11;
         break;
     }
 

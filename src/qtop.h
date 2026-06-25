@@ -85,15 +85,18 @@ typedef struct {
 } server_t;
 
 typedef enum {
-    JOB_RUNNING   = 'R',
-    JOB_QUEUED    = 'Q',
-    JOB_WAITING   = 'W',
-    JOB_HELD      = 'H',
-    JOB_SUSPENDED = 'S',
-    JOB_EXITING   = 'E',
-    JOB_TRANSIT   = 'T',
-    JOB_BEGUN     = 'B',
-    JOB_FINISHED  = 'F'
+    JOB_SUB_RUNNING   = 'B',
+    JOB_EXITING       = 'E',
+    JOB_FINISHED      = 'F',
+    JOB_HELD          = 'H',
+    JOB_MOVED         = 'M',
+    JOB_QUEUED        = 'Q',
+    JOB_RUNNING       = 'R',
+    JOB_SUSPENDED     = 'S',
+    JOB_TRANSIT       = 'T',
+    JOB_SUSPENDED_U   = 'U',
+    JOB_WAITING       = 'W',
+    JOB_SUB_COMPLETED = 'X'
 } job_state_t;
 
 typedef enum {
