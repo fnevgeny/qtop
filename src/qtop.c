@@ -1049,31 +1049,27 @@ static int state_rank(job_state_t s)
         rank = 2;
         break;
     case JOB_SUB_RUNNING:
+    case JOB_RUNNING:
         rank = 3;
         break;
-    case JOB_RUNNING:
+    case JOB_QUEUED:
         rank = 4;
         break;
-    case JOB_QUEUED:
+    case JOB_WAITING:
         rank = 5;
         break;
-    case JOB_WAITING:
+    case JOB_HELD:
         rank = 6;
         break;
-    case JOB_HELD:
+    case JOB_TRANSIT:
         rank = 7;
         break;
-    case JOB_TRANSIT:
+    case JOB_SUB_COMPLETED:
+    case JOB_FINISHED:
         rank = 8;
         break;
-    case JOB_SUB_COMPLETED:
-        rank = 9;
-        break;
-    case JOB_FINISHED:
-        rank = 10;
-        break;
     case JOB_MOVED:
-        rank = 11;
+        rank = 9;
         break;
     }
 
@@ -1084,7 +1080,12 @@ static int job_comp(const void *a, const void *b)
 {
     const job_t *ja = a, *jb = b;
     int cmp = 0;
-    
+
+    /* sort subjobs according to their sub-id irrespecitvely of the state */
+    if (jb->id == ja->id) {
+        return ja->aid - jb->aid;
+    }
+
     cmp = state_rank(ja->state) - state_rank(jb->state);
 
     if (cmp == 0) {
@@ -1094,6 +1095,7 @@ static int job_comp(const void *a, const void *b)
             cmp = 0;
         }
     }
+
     if (cmp == 0) {
         if (ja->queue && jb->queue) {
             cmp = strcmp(ja->queue, jb->queue);
@@ -1101,11 +1103,9 @@ static int job_comp(const void *a, const void *b)
             cmp = 0;
         }
     }
+
     if (cmp == 0) {
-        return jb->id - ja->id;
-    }
-    if (cmp == 0) {
-        return ja->aid - jb->aid;
+        cmp = jb->id - ja->id;
     }
 
     return cmp;
